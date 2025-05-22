@@ -1,13 +1,29 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import { StockStatus, StockType } from 'domain/entities/stock';
-import { StockMovement } from '../domain/entities/StockMovement';
+import { StockMovement } from '../../domain/entities/stock';
 import { Stock } from '../../domain/entities/stock';
 import { StockRepository } from '../../domain/interfaces/stockRepository';
-interface StockDocument extends Document, Stock {}
-interface StockMovementDocument extends Document, StockMovement {}
+
+
+interface StockDocument extends Document {
+  _id: string;
+  name: string;
+  type: StockType;
+  quantity: number;
+  clientId?: string;
+}
+
+interface StockMovementDocument extends Document {
+  _id: string;
+  stockId: string;
+  quantity: number;
+  status: StockStatus;
+  date: Date;
+  clientId?: string;
+}
 
 const StockSchema = new Schema({
-  id: { type: String, required: true, unique: true },
+  _id: { type: String, required: true, unique: true },
   name: { type: String, required: true },
   type: { type: String, enum: Object.values(StockType), required: true },
   quantity: { type: Number, required: true },
@@ -15,7 +31,7 @@ const StockSchema = new Schema({
 });
 
 const StockMovementSchema = new Schema({
-  id: { type: String, required: true, unique: true },
+  _id: { type: String, required: true, unique: true },
   stockId: { type: String, required: true },
   quantity: { type: Number, required: true },
   status: { type: String, enum: Object.values(StockStatus), required: true },
@@ -32,15 +48,15 @@ export class MongoStockRepository implements StockRepository {
   }
 
   async addStock(stock: Stock): Promise<void> {
-    const existingStock = await StockModel.findOne({ id: stock.id });
+    const existingStock = await StockModel.findOne({ _id: stock.id });
     if (existingStock) {
       existingStock.quantity += stock.quantity;
       await existingStock.save();
     } else {
-      await StockModel.create(stock);
+      await StockModel.create({ _id: stock.id, ...stock });
     }
     await StockMovementModel.create({
-      id: Date.now().toString(),
+      _id: Date.now().toString(),
       stockId: stock.id,
       quantity: stock.quantity,
       status: StockStatus.IN,
@@ -50,14 +66,14 @@ export class MongoStockRepository implements StockRepository {
   }
 
   async removeStock(stockId: string, quantity: number, clientId?: string): Promise<void> {
-    const stock = await StockModel.findOne({ id: stockId });
+    const stock = await StockModel.findOne({ _id: stockId });
     if (!stock || stock.quantity < quantity) {
       throw new Error('Insufficient stock or stock not found');
     }
     stock.quantity -= quantity;
     await stock.save();
     await StockMovementModel.create({
-      id: Date.now().toString(),
+      _id: Date.now().toString(),
       stockId,
       quantity,
       status: StockStatus.OUT,
@@ -67,18 +83,35 @@ export class MongoStockRepository implements StockRepository {
   }
 
   async getStockById(stockId: string): Promise<Stock | null> {
-    return StockModel.findOne({ id: stockId });
+    const stock = await StockModel.findOne({ _id: stockId });
+    if (!stock) return null;
+    return { id: stock._id, name: stock.name, type: stock.type, quantity: stock.quantity, clientId: stock.clientId };
   }
 
   async getAllStock(): Promise<Stock[]> {
-    return StockModel.find();
+    const stocks = await StockModel.find();
+    return stocks.map((s) => ({
+      id: s._id,
+      name: s.name,
+      type: s.type,
+      quantity: s.quantity,
+      clientId: s.clientId,
+    }));
   }
 
   async getMovementsByMonth(month: number, year: number): Promise<StockMovement[]> {
     const start = new Date(year, month - 1, 1);
     const end = new Date(year, month, 0);
-    return StockMovementModel.find({
+    const movements = await StockMovementModel.find({
       date: { $gte: start, $lte: end },
     });
+    return movements.map((m: StockMovementDocument) => ({
+      id: m._id,
+      stockId: m.stockId,
+      quantity: m.quantity,
+      status: m.status,
+      date: m.date,
+      clientId: m.clientId,
+    }));
   }
 }

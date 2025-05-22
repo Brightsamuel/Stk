@@ -1,12 +1,15 @@
 import mongoose, { Schema, Document } from 'mongoose';
-
-import { UserRepository } from '../../domain/interfaces/userRepository';
 import { User } from '../../domain/entities/user';
+import { UserRepository } from '../../domain/interfaces/userRepository';
 
-interface UserDocument extends Document, User {}
+interface UserDocument extends Document {
+  _id: string;
+  username: string;
+  password: string;
+}
 
 const UserSchema = new Schema({
-  id: { type: String, required: true, unique: true },
+  _id: { type: String, required: true, unique: true },
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
 });
@@ -15,10 +18,16 @@ const UserModel = mongoose.model<UserDocument>('User', UserSchema);
 
 export class MongoUserRepository implements UserRepository {
   async findByUsername(username: string): Promise<User | null> {
-    return UserModel.findOne({ username });
+    const userDoc = await UserModel.findOne({ username });
+    if (!userDoc) return null;
+    return {
+      id: userDoc._id, // Map _id to id
+      username: userDoc.username,
+      password: userDoc.password,
+    };
   }
 
   async create(user: User): Promise<void> {
-    await UserModel.create(user);
+    await UserModel.create({ _id: user.id, username: user.username, password: user.password });
   }
 }

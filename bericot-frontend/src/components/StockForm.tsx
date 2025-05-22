@@ -10,9 +10,19 @@ const StockForm: React.FC = () => {
   const [month, setMonth] = useState(1);
   const [year, setYear] = useState(2025);
 
+  // Get token from localStorage (adjust as needed)
+  const token = localStorage.getItem('token') || '';
+
   const handleAddStock = async () => {
     try {
-      await addStock({ name, type, quantity, clientId: type === 'current' ? clientId : undefined });
+      const stock = {
+        _id: Date.now().toString(),
+        name,
+        type,
+        quantity: Number(quantity),
+        clientId: type === 'current' ? clientId : undefined,
+      };
+      await addStock(stock, { headers: { Authorization: `Bearer ${token}` } });
       alert('Stock added successfully');
     } catch (error) {
       alert('Error adding stock');
@@ -21,7 +31,12 @@ const StockForm: React.FC = () => {
 
   const handleRemoveStock = async () => {
     try {
-      await removeStock(stockId, quantity, type === 'current' ? clientId : undefined);
+      await removeStock(
+        stockId,
+        Number(quantity),
+        type === 'current' ? clientId : undefined,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       alert('Stock removed successfully');
     } catch (error) {
       alert('Error removing stock');
@@ -30,7 +45,11 @@ const StockForm: React.FC = () => {
 
   const handleDownloadReport = async () => {
     try {
-      const response = await downloadReport(month, year);
+      const response = await downloadReport(
+        month,
+        year,
+        { headers: { Authorization: `Bearer ${token}` } } // Pass config as third argument
+      );
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
