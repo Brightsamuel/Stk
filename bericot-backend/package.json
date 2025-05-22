@@ -1,0 +1,38 @@
+{
+  "name": "bericot-backend",
+  "version": "1.0.0",
+  "description": "Backend for Bericot stock tracking application",
+  "main": "dist/app.js",
+  "type": "commonjs",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/app.js",
+    "dev": "ts-node src/app.ts"
+  },
+  "keywords": [
+    "stock",
+    "clean-architecture",
+    "express",
+    "typescript"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.9",
+    "bcryptjs": "^3.0.2",
+    "exceljs": "^4.4.0",
+    "express": "^4.19.2",
+    "inversify": "^6.0.3",
+    "inversify-express-utils": "^6.4.6",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.15.0",
+    "reflect-metadata": "^0.2.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.14.11",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4"
+  }
+}
