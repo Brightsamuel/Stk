@@ -1,10 +1,12 @@
+import { injectable, inject } from 'inversify';
 import { StockRepository } from '../../domain/interfaces/stockRepository';
 import { ReportGenerator } from '../../domain/interfaces/reportRepository';
 
+@injectable()
 export class GenerateMonthlyReportUseCase {
   constructor(
-    private stockRepository: StockRepository,
-    private reportGenerator: ReportGenerator
+    @inject('StockRepository') private stockRepository: StockRepository,
+    @inject('ReportGenerator') private reportGenerator: ReportGenerator
   ) {}
 
   async execute(month: number, year: number): Promise<Buffer> {

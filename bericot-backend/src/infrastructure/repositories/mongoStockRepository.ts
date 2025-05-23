@@ -1,8 +1,9 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import { StockStatus, StockType } from 'domain/entities/stock';
-import { StockMovement } from '../../domain/entities/stock';
+import { StockStatus, StockType } from '../../domain/entities/stock';
+import { StockMovement } from '../../domain/entities/stockMovement';
 import { Stock } from '../../domain/entities/stock';
 import { StockRepository } from '../../domain/interfaces/stockRepository';
+import { injectable } from 'inversify';
 
 
 interface StockDocument extends Document {
@@ -23,7 +24,7 @@ interface StockMovementDocument extends Document {
 }
 
 const StockSchema = new Schema({
-  _id: { type: String, required: true, unique: true },
+  _id: { type: String, required: true },
   name: { type: String, required: true },
   type: { type: String, enum: Object.values(StockType), required: true },
   quantity: { type: Number, required: true },
@@ -31,7 +32,7 @@ const StockSchema = new Schema({
 });
 
 const StockMovementSchema = new Schema({
-  _id: { type: String, required: true, unique: true },
+  _id: { type: String, required: true },
   stockId: { type: String, required: true },
   quantity: { type: Number, required: true },
   status: { type: String, enum: Object.values(StockStatus), required: true },
@@ -42,6 +43,7 @@ const StockMovementSchema = new Schema({
 const StockModel = mongoose.model<StockDocument>('Stock', StockSchema);
 const StockMovementModel = mongoose.model<StockMovementDocument>('StockMovement', StockMovementSchema);
 
+@injectable()
 export class MongoStockRepository implements StockRepository {
   constructor() {
     mongoose.connect('mongodb://localhost:27017/bericot', { dbName: 'bericot' });

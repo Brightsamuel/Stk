@@ -1,11 +1,15 @@
+import { injectable, inject } from 'inversify';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { UserRepository } from '../../domain/interfaces/userRepository';
 import { AuthService } from '../../domain/interfaces/authService';
 import { User } from '../../domain/entities/user';
 
+@injectable()
 export class JwtAuthService implements AuthService {
-  constructor(private userRepository: UserRepository) {}
+  constructor(
+    @inject('UserRepository') private userRepository: UserRepository
+  ) {}
 
   async login(username: string, password: string): Promise<string> {
     const user = await this.userRepository.findByUsername(username);

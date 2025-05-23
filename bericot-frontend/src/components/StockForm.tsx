@@ -10,7 +10,6 @@ const StockForm: React.FC = () => {
   const [month, setMonth] = useState(1);
   const [year, setYear] = useState(2025);
 
-  // Get token from localStorage (adjust as needed)
   const token = localStorage.getItem('token') || '';
 
   const handleAddStock = async () => {
@@ -25,7 +24,7 @@ const StockForm: React.FC = () => {
       await addStock(stock, { headers: { Authorization: `Bearer ${token}` } });
       alert('Stock added successfully');
     } catch (error) {
-      alert('Error adding stock');
+      alert('Error adding stock: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
   };
 
@@ -39,26 +38,27 @@ const StockForm: React.FC = () => {
       );
       alert('Stock removed successfully');
     } catch (error) {
-      alert('Error removing stock');
+      alert('Error removing stock: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
   };
 
   const handleDownloadReport = async () => {
     try {
-      const response = await downloadReport(
-        month,
-        year,
-        { headers: { Authorization: `Bearer ${token}` } } // Pass config as third argument
-      );
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const config = {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob' as const,
+      };
+      const response = await downloadReport(month, year, config);
+      const url = window.URL.createObjectURL(response.data);
       const link = document.createElement('a');
       link.href = url;
       link.setAttribute('download', `stock-report-${month}-${year}.xlsx`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
     } catch (error) {
-      alert('Error downloading report');
+      alert('Error downloading report: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
   };
 
@@ -76,7 +76,7 @@ const StockForm: React.FC = () => {
           type="number"
           placeholder="Quantity"
           value={quantity}
-          onChange={(e) => setQuantity(parseInt(e.target.value))}
+          onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
         />
         {type === 'current' && (
           <input placeholder="Client ID" value={clientId} onChange={(e) => setClientId(e.target.value)} />
@@ -90,7 +90,7 @@ const StockForm: React.FC = () => {
           type="number"
           placeholder="Quantity"
           value={quantity}
-          onChange={(e) => setQuantity(parseInt(e.target.value))}
+          onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
         />
         {type === 'current' && (
           <input placeholder="Client ID" value={clientId} onChange={(e) => setClientId(e.target.value)} />
@@ -103,13 +103,13 @@ const StockForm: React.FC = () => {
           type="number"
           placeholder="Month"
           value={month}
-          onChange={(e) => setMonth(parseInt(e.target.value))}
+          onChange={(e) => setMonth(parseInt(e.target.value) || 1)}
         />
         <input
           type="number"
           placeholder="Year"
           value={year}
-          onChange={(e) => setYear(parseInt(e.target.value))}
+          onChange={(e) => setYear(parseInt(e.target.value) || 2025)}
         />
         <button onClick={handleDownloadReport}>Download Report</button>
       </div>

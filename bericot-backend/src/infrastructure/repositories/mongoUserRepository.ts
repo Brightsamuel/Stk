@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import { User } from '../../domain/entities/user';
 import { UserRepository } from '../../domain/interfaces/userRepository';
+import { injectable } from 'inversify';
 
 interface UserDocument extends Document {
   _id: string;
@@ -9,13 +10,14 @@ interface UserDocument extends Document {
 }
 
 const UserSchema = new Schema({
-  _id: { type: String, required: true, unique: true },
-  username: { type: String, required: true, unique: true },
+  _id: { type: String, required: true },
+  username: { type: String, required: true },
   password: { type: String, required: true },
 });
 
 const UserModel = mongoose.model<UserDocument>('User', UserSchema);
 
+@injectable()
 export class MongoUserRepository implements UserRepository {
   async findByUsername(username: string): Promise<User | null> {
     const userDoc = await UserModel.findOne({ username });

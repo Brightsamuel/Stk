@@ -1,7 +1,9 @@
+import { injectable } from 'inversify';
 import ExcelJS from 'exceljs';
 import { ReportGenerator } from '../../domain/interfaces/reportRepository';
 import { StockMovement } from '../../domain/entities/stock';
 
+@injectable()
 export class ExcelReportGenerator implements ReportGenerator {
   async generateMonthlyReport(movements: StockMovement[], month: number, year: number): Promise<Buffer> {
     const workbook = new ExcelJS.Workbook();

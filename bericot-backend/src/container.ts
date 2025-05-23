@@ -10,6 +10,8 @@ import { MongoUserRepository } from './infrastructure/repositories/mongoUserRepo
 import { JwtAuthService } from './infrastructure/services/authService';
 import { AuthService } from './domain/interfaces/authService';
 import { UserRepository } from './domain/interfaces/userRepository';
+import { StockController } from './presentation/controllers/stockController';
+import { AuthController } from './presentation/controllers/authController';
 
 const container = new Container();
 
@@ -20,5 +22,7 @@ container.bind<RemoveStockUseCase>(RemoveStockUseCase).toSelf().inSingletonScope
 container.bind<GenerateMonthlyReportUseCase>(GenerateMonthlyReportUseCase).toSelf().inSingletonScope();
 container.bind<UserRepository>('UserRepository').to(MongoUserRepository).inSingletonScope();
 container.bind<AuthService>('AuthService').to(JwtAuthService).inSingletonScope();
+container.bind<StockController>(StockController).toSelf().inSingletonScope();
+container.bind<AuthController>(AuthController).toSelf().inSingletonScope();
 
 export { container };
