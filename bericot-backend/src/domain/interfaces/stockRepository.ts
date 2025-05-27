@@ -6,4 +6,5 @@ export interface StockRepository {
   getStockById(stockId: string): Promise<Stock | null>;
   getAllStock(): Promise<Stock[]>;
   getMovementsByMonth(month: number, year: number): Promise<StockMovement[]>;
+  getReplenishmentSuggestions(month: number, year: number): Promise<{ stockId: string; name: string; suggestedQuantity: number }[]>;
 }

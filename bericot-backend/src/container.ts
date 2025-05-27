@@ -12,6 +12,7 @@ import { AuthService } from './domain/interfaces/authService';
 import { UserRepository } from './domain/interfaces/userRepository';
 import { StockController } from './presentation/controllers/stockController';
 import { AuthController } from './presentation/controllers/authController';
+import { GetReplenishmentSuggestionsUseCase } from './application/useCases/getReplenishmentSuggestions';
 
 const container = new Container();
 
@@ -24,5 +25,6 @@ container.bind<UserRepository>('UserRepository').to(MongoUserRepository).inSingl
 container.bind<AuthService>('AuthService').to(JwtAuthService).inSingletonScope();
 container.bind<StockController>(StockController).toSelf().inSingletonScope();
 container.bind<AuthController>(AuthController).toSelf().inSingletonScope();
+container.bind<GetReplenishmentSuggestionsUseCase>(GetReplenishmentSuggestionsUseCase).toSelf().inSingletonScope();
 
 export { container };

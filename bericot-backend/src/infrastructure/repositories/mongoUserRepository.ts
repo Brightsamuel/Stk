@@ -33,3 +33,8 @@ export class MongoUserRepository implements UserRepository {
     await UserModel.create({ _id: user.id, username: user.username, password: user.password });
   }
 }
+
+mongoose.connect(
+  process.env.MONGODB_URI || 'mongodb://localhost:27017/bericot',
+  { dbName: 'bericot' }
+);

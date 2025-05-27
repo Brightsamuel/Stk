@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getStocks, Stock } from '../services/api';
+import { getAllStock, Stock } from '../services/api';
 
 const StockList: React.FC = () => {
   const [stocks, setStocks] = useState<Stock[]>([]);
@@ -11,7 +11,7 @@ const StockList: React.FC = () => {
         const config = {
           headers: { Authorization: `Bearer ${token}` },
         };
-        const response = await getStocks(config);
+        const response = await getAllStock(config);
         setStocks(response.data);
       } catch (error) {
         console.error('Error fetching stocks:', error);
@@ -25,7 +25,7 @@ const StockList: React.FC = () => {
       <h3>Stock List</h3>
       <ul>
         {stocks.map((stock) => (
-          <li key={stock._id}>
+          <li key={stock.id}>
             {stock.name} ({stock.type}): {stock.quantity}
             {stock.clientId && `, Client: ${stock.clientId}`}
           </li>

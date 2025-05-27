@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 export interface Stock {
-  _id: string;
+  id: string;
   name: string;
   type: string;
   quantity: number;
@@ -10,17 +10,21 @@ export interface Stock {
 
 // Fallback type for Axios config if @types/axios fails
 type AxiosRequestConfig = any;
-// Fallback type for Axios response if @types/axios fails
 type AxiosResponse<T = any> = { data: T; status: number; statusText: string; headers: any; config: any };
 
 const api = axios.create({
-  baseURL: 'http://localhost:3000',
+  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:3000/api',
 });
 
-export const addStock = async (stock: Stock, config?: AxiosRequestConfig): Promise<AxiosResponse<Stock>> => {
+// Add Stock
+export const addStock = async (
+  stock: { name: string; type: string; quantity: number; clientId?: string },
+  config?: AxiosRequestConfig
+): Promise<AxiosResponse<Stock>> => {
   return api.post('/stock/add', stock, config);
 };
 
+// Remove Stock
 export const removeStock = async (
   stockId: string,
   quantity: number,
@@ -30,16 +34,29 @@ export const removeStock = async (
   return api.post('/stock/remove', { stockId, quantity, clientId }, config);
 };
 
+// Download Report
 export const downloadReport = async (
   month: number,
   year: number,
   config?: AxiosRequestConfig
 ): Promise<AxiosResponse<Blob>> => {
-  return api.get(`/report/${month}/${year}`, { ...config, responseType: 'blob' });
+  return api.get(`/stock/report/${month}/${year}`, { ...config, responseType: 'blob' });
 };
 
-export const getStocks = async (config?: AxiosRequestConfig): Promise<AxiosResponse<Stock[]>> => {
-  return api.get('/stock', config);
+// Get All Stocks
+export const getAllStock = async (
+  config?: AxiosRequestConfig
+): Promise<AxiosResponse<Stock[]>> => {
+  return api.get('/stock/all', config);
+};
+
+// Get Replenishment Suggestions
+export const getReplenishmentSuggestions = async (
+  month: number,
+  year: number,
+  config?: AxiosRequestConfig
+): Promise<AxiosResponse<any>> => {
+  return api.get(`/stock/replenishment/${month}/${year}`, config);
 };
 
 export default api;

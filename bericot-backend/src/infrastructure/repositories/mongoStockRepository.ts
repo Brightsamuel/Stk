@@ -5,7 +5,6 @@ import { Stock } from '../../domain/entities/stock';
 import { StockRepository } from '../../domain/interfaces/stockRepository';
 import { injectable } from 'inversify';
 
-
 interface StockDocument extends Document {
   _id: string;
   name: string;
@@ -46,7 +45,10 @@ const StockMovementModel = mongoose.model<StockMovementDocument>('StockMovement'
 @injectable()
 export class MongoStockRepository implements StockRepository {
   constructor() {
-    mongoose.connect('mongodb://localhost:27017/bericot', { dbName: 'bericot' });
+    mongoose.connect(
+      process.env.MONGODB_URI || 'mongodb://localhost:27017/bericot',
+      { dbName: 'bericot' }
+    );
   }
 
   async addStock(stock: Stock): Promise<void> {
@@ -55,7 +57,7 @@ export class MongoStockRepository implements StockRepository {
       existingStock.quantity += stock.quantity;
       await existingStock.save();
     } else {
-      await StockModel.create({ _id: stock.id, ...stock });
+      await StockModel.create({ _id: stock.id, name: stock.name, type: stock.type, quantity: stock.quantity, clientId: stock.clientId });
     }
     await StockMovementModel.create({
       _id: Date.now().toString(),
@@ -115,5 +117,31 @@ export class MongoStockRepository implements StockRepository {
       date: m.date,
       clientId: m.clientId,
     }));
+  }
+
+  async getReplenishmentSuggestions(
+    month: number,
+    year: number
+  ): Promise<{ stockId: string; name: string; suggestedQuantity: number }[]> {
+    const start = new Date(year, month - 1, 1);
+    const end = new Date(year, month, 0);
+    const movements = await StockMovementModel.find({
+      date: { $gte: start, $lte: end },
+      status: StockStatus.OUT,
+    });
+    const stocks = await StockModel.find();
+    const suggestions: { [key: string]: { stockId: string; name: string; suggestedQuantity: number } } = {};
+
+    movements.forEach((movement) => {
+      const stock = stocks.find((s) => s._id === movement.stockId);
+      if (stock) {
+        if (!suggestions[movement.stockId]) {
+          suggestions[movement.stockId] = { stockId: movement.stockId, name: stock.name, suggestedQuantity: 0 };
+        }
+        suggestions[movement.stockId].suggestedQuantity += movement.quantity;
+      }
+    });
+
+    return Object.values(suggestions);
   }
 }
