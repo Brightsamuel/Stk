@@ -1,261 +1,291 @@
 import React, { useState } from 'react';
-import { addStock, removeStock, downloadReport } from '../services/api';
-import StockDashboard from '../StockDashboard';
 import { Button, TextField, MenuItem, Select, FormControl, InputLabel, Box, Typography, Grid } from '@mui/material';
+import StockDashboard from '../StockDashboard';
+import { addStock, removeStock, downloadReport } from '../services/api';
 
-const StockForm: React.FC = () => {
-  const [name, setName] = useState('');
-  const [type, setType] = useState('fixed');
-  const [quantity, setQuantity] = useState('');
-  const [clientId, setClientId] = useState('');
-  const [stockId, setStockId] = useState('');
-  const [month, setMonth] = useState('1');
-  const [year, setYear] = useState('2025');
-  const [token, setToken] = useState(localStorage.getItem('token') || '');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [errors, setErrors] = useState({ name: '', quantity: '', stockId: '', month: '', year: '' });
+interface Stock {
+  id: string;
+  name: string;
+  type: string;
+  quantity: number;
+  clientId?: string;
+}
 
-  const validate = (field: string, value: string) => {
-    if (field === 'name' && !value) return 'Name is required';
-    if (field === 'quantity' && (!value || isNaN(Number(value)) || Number(value) <= 0)) return 'Quantity must be a positive number';
-    if (field === 'stockId' && !value) return 'Stock ID is required';
-    if (field === 'month' && (!value || isNaN(Number(value)) || Number(value) < 1 || Number(value) > 12)) return 'Month must be between 1 and 12';
-    if (field === 'year' && (!value || isNaN(Number(value)) || Number(value) < 2000)) return 'Year must be valid';
-    return '';
+interface StockFormProps {
+  token: string;
+}
+
+const StockForm: React.FC<StockFormProps> = ({ token }) => {
+  const [stockData, setStockData] = useState({
+    name: '',
+    type: '',
+    quantity: 0,
+    clientId: ''
+  });
+  
+  const [removeId, setRemoveId] = useState('');
+  const [removeQuantity, setRemoveQuantity] = useState(0);
+  const [reportMonth, setReportMonth] = useState('');
+  const [reportYear, setReportYear] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const [showDashboard, setShowDashboard] = useState(true);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setStockData(prev => ({
+      ...prev,
+      [name]: name === 'quantity' ? Number(value) : value
+    }));
   };
 
-  const handleLogin = async () => {
+  const handleSelectChange = (e: any) => {
+    const { name, value } = e.target;
+    setStockData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleAddStock = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setMessage('');
+
     try {
-      const response = await fetch('http://localhost:3000/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
+      const config = {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      };
+      await addStock(stockData, config);
+      setMessage('Stock added successfully!');
+      setStockData({
+        name: '',
+        type: '',
+        quantity: 0,
+        clientId: ''
       });
-      const data = await response.json();
-      if (response.ok) {
-        setToken(data.token);
-        localStorage.setItem('token', data.token);
-        alert('Login successful');
-      } else {
-        alert(data.error);
-      }
-    } catch (error) {
-      alert('Error logging in');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to add stock');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleAddStock = async () => {
-    const nameError = validate('name', name);
-    const quantityError = validate('quantity', quantity);
-    if (nameError || quantityError) {
-      setErrors({ ...errors, name: nameError, quantity: quantityError });
-      return;
-    }
+  const handleRemoveStock = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setMessage('');
+
     try {
-      await addStock(
-        { name, type, quantity: Number(quantity), clientId: type === 'current' ? clientId : undefined },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      alert('Stock added successfully');
-      setName('');
-      setQuantity('');
-      setClientId('');
-    } catch (error) {
-      alert('Error adding stock');
+      const config = {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      };
+      await removeStock(removeId, removeQuantity, stockData.clientId, config);
+      setMessage('Stock removed successfully!');
+      setRemoveId('');
+      setRemoveQuantity(0);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to remove stock');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleRemoveStock = async () => {
-    const stockIdError = validate('stockId', stockId);
-    const quantityError = validate('quantity', quantity);
-    if (stockIdError || quantityError) {
-      setErrors({ ...errors, stockId: stockIdError, quantity: quantityError });
-      return;
-    }
-    try {
-      await removeStock(stockId, Number(quantity), type === 'current' ? clientId : undefined, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      alert('Stock removed successfully');
-      setStockId('');
-      setQuantity('');
-      setClientId('');
-    } catch (error) {
-      alert('Error removing stock');
-    }
-  };
+  const handleGenerateReport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setMessage('');
 
-  const handleDownloadReport = async () => {
-    const monthError = validate('month', month);
-    const yearError = validate('year', year);
-    if (monthError || yearError) {
-      setErrors({ ...errors, month: monthError, year: yearError });
-      return;
-    }
     try {
-      const response = await downloadReport(Number(month), Number(year), {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const config = {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      };
+      const month = parseInt(reportMonth);
+      const year = parseInt(reportYear);
+      const response = await downloadReport(month, year, config);
+      
+      // Create download link for the blob
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `stock-report-${month}-${year}.xlsx`);
+      link.setAttribute('download', `stock-report-${month}-${year}.pdf`);
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
-    } catch (error) {
-      alert('Error downloading report');
+      link.remove();
+      
+      setMessage('Report downloaded successfully!');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to generate report');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <Box sx={{ p: 4 }}>
-      <Typography variant="h4" gutterBottom>Bericot Stock Tracking</Typography>
-      {!token ? (
+    <Box sx={{ maxWidth: 1200, mx: 'auto', p: 3 }}>
+      <Typography variant="h4" component="h1" gutterBottom>
+        Stock Management System
+      </Typography>
+      
+      <Button 
+        variant="outlined" 
+        onClick={() => setShowDashboard(!showDashboard)}
+        sx={{ mb: 3 }}
+      >
+        {showDashboard ? 'Hide Dashboard' : 'Show Dashboard'}
+      </Button>
+
+      {message && (
+        <Box sx={{ mb: 2, p: 2, bgcolor: 'success.light', color: 'success.contrastText', borderRadius: 1 }}>
+          {message}
+        </Box>
+      )}
+
+      {error && (
+        <Box sx={{ mb: 2, p: 2, bgcolor: 'error.light', color: 'error.contrastText', borderRadius: 1 }}>
+          {error}
+        </Box>
+      )}
+
+      {showDashboard ? (
         <Box sx={{ mb: 4 }}>
-          <Typography variant="h6">Login</Typography>
-          <TextField
-            label="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            fullWidth
-            margin="normal"
-          />
-          <TextField
-            label="Password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            fullWidth
-            margin="normal"
-          />
-          <Button variant="contained" onClick={handleLogin} sx={{ mt: 2 }}>
-            Login
-          </Button>
+          <StockDashboard token={token} />
         </Box>
       ) : (
         <Grid container spacing={3}>
-          <Grid item xs={12}>
+          <Grid size={12}>
             <StockDashboard token={token} />
-          </Grid>
-          <Grid item xs={12} md={6}>
+          </Grid>          
+          <Grid size={{ xs: 12, md: 6 }}>
             <Typography variant="h6">Add Stock</Typography>
             <TextField
               label="Name"
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value);
-                setErrors({ ...errors, name: validate('name', e.target.value) });
-              }}
-              error={!!errors.name}
-              helperText={errors.name}
+              name="name"
+              value={stockData.name}
+              onChange={handleInputChange}
               fullWidth
               margin="normal"
+              required
             />
             <FormControl fullWidth margin="normal">
               <InputLabel>Type</InputLabel>
-              <Select value={type} onChange={(e) => setType(e.target.value)}>
-                <MenuItem value="fixed">Fixed</MenuItem>
-                <MenuItem value="current">Current</MenuItem>
+              <Select
+                name="type"
+                value={stockData.type}
+                onChange={handleSelectChange}
+                label="Type"
+              >
+                <MenuItem value="Electronics">Electronics</MenuItem>
+                <MenuItem value="Clothing">Clothing</MenuItem>
+                <MenuItem value="Food">Food</MenuItem>
+                <MenuItem value="Books">Books</MenuItem>
+                <MenuItem value="Other">Other</MenuItem>
               </Select>
             </FormControl>
             <TextField
               label="Quantity"
+              name="quantity"
               type="number"
-              value={quantity}
-              onChange={(e) => {
-                setQuantity(e.target.value);
-                setErrors({ ...errors, quantity: validate('quantity', e.target.value) });
-              }}
-              error={!!errors.quantity}
-              helperText={errors.quantity}
+              value={stockData.quantity}
+              onChange={handleInputChange}
+              fullWidth
+              margin="normal"
+              required
+            />
+            <TextField
+              label="Client ID (Optional)"
+              name="clientId"
+              value={stockData.clientId}
+              onChange={handleInputChange}
               fullWidth
               margin="normal"
             />
-            {type === 'current' && (
-              <TextField
-                label="Client ID"
-                value={clientId}
-                onChange={(e) => setClientId(e.target.value)}
-                fullWidth
-                margin="normal"
-              />
-            )}
-            <Button variant="contained" onClick={handleAddStock} sx={{ mt: 2 }}>
-              Add Stock
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              fullWidth
+              sx={{ mt: 2 }}
+              onClick={handleAddStock}
+              disabled={loading}
+            >
+              {loading ? 'Adding...' : 'Add Stock'}
             </Button>
           </Grid>
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Typography variant="h6">Remove Stock</Typography>
             <TextField
               label="Stock ID"
-              value={stockId}
-              onChange={(e) => {
-                setStockId(e.target.value);
-                setErrors({ ...errors, stockId: validate('stockId', e.target.value) });
-              }}
-              error={!!errors.stockId}
-              helperText={errors.stockId}
+              value={removeId}
+              onChange={(e) => setRemoveId(e.target.value)}
               fullWidth
               margin="normal"
+              required
             />
             <TextField
-              label="Quantity"
+              label="Quantity to Remove"
               type="number"
-              value={quantity}
-              onChange={(e) => {
-                setQuantity(e.target.value);
-                setErrors({ ...errors, quantity: validate('quantity', e.target.value) });
-              }}
-              error={!!errors.quantity}
-              helperText={errors.quantity}
+              value={removeQuantity}
+              onChange={(e) => setRemoveQuantity(Number(e.target.value))}
               fullWidth
               margin="normal"
+              required
             />
-            {type === 'current' && (
-              <TextField
-                label="Client ID"
-                value={clientId}
-                onChange={(e) => setClientId(e.target.value)}
-                fullWidth
-                margin="normal"
-              />
-            )}
-            <Button variant="contained" onClick={handleRemoveStock} sx={{ mt: 2 }}>
-              Remove Stock
+            <Button
+              type="submit"
+              variant="contained"
+              color="secondary"
+              fullWidth
+              sx={{ mt: 2 }}
+              onClick={handleRemoveStock}
+              disabled={loading}
+            >
+              {loading ? 'Removing...' : 'Remove Stock'}
             </Button>
           </Grid>
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Typography variant="h6">Generate Monthly Report</Typography>
             <TextField
-              label="Month"
+              label="Month (1-12)"
               type="number"
-              value={month}
-              onChange={(e) => {
-                setMonth(e.target.value);
-                setErrors({ ...errors, month: validate('month', e.target.value) });
-              }}
-              error={!!errors.month}
-              helperText={errors.month}
+              value={reportMonth}
+              onChange={(e) => setReportMonth(e.target.value)}
               fullWidth
               margin="normal"
+              placeholder="e.g., 1 for January"
+              inputProps={{ min: 1, max: 12 }}
+              required
             />
             <TextField
               label="Year"
               type="number"
-              value={year}
-              onChange={(e) => {
-                setYear(e.target.value);
-                setErrors({ ...errors, year: validate('year', e.target.value) });
-              }}
-              error={!!errors.year}
-              helperText={errors.year}
+              value={reportYear}
+              onChange={(e) => setReportYear(e.target.value)}
               fullWidth
               margin="normal"
+              placeholder="e.g., 2024"
+              required
             />
-            <Button variant="contained" onClick={handleDownloadReport} sx={{ mt: 2 }}>
-              Download Report
+            <Button
+              type="submit"
+              variant="contained"
+              color="info"
+              fullWidth
+              sx={{ mt: 2 }}
+              onClick={handleGenerateReport}
+              disabled={loading}
+            >
+              {loading ? 'Downloading...' : 'Download Report'}
             </Button>
           </Grid>
         </Grid>

@@ -44,12 +44,12 @@ const StockMovementModel = mongoose.model<StockMovementDocument>('StockMovement'
 
 @injectable()
 export class MongoStockRepository implements StockRepository {
-  constructor() {
-    mongoose.connect(
-      process.env.MONGODB_URI || 'mongodb://localhost:27017/bericot',
-      { dbName: 'bericot' }
-    );
-  }
+  // constructor() {
+  //   mongoose.connect(
+  //     process.env.MONGODB_URI || 'mongodb://localhost:27017/bericot',
+  //     { dbName: 'bericot' }
+  //   );
+  // }
 
   async addStock(stock: Stock): Promise<void> {
     const existingStock = await StockModel.findOne({ _id: stock.id });

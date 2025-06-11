@@ -8,7 +8,7 @@ import { GetReplenishmentSuggestionsUseCase } from '../../application/useCases/g
 import { AuthService } from '../../domain/interfaces/authService';
 import { Stock } from '../../domain/entities/stock';
 
-@controller('/api/stock')
+@controller('')
 export class StockController {
   constructor(
     @inject(AddStockUseCase) private addStockUseCase: AddStockUseCase,
