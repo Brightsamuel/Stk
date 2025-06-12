@@ -1,3 +1,4 @@
+//stockRoutes.ts
 import { Router } from 'express';
 import { container } from '../../container';
 import { StockController } from '../controllers/stockController';

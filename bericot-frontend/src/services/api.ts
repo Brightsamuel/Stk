@@ -8,7 +8,6 @@ export interface Stock {
   clientId?: string;
 }
 
-// Fallback type for Axios config if @types/axios fails
 type AxiosRequestConfig = any;
 type AxiosResponse<T = any> = { data: T; status: number; statusText: string; headers: any; config: any };
 
@@ -16,12 +15,12 @@ const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL || 'http://localhost:3001/api',
 });
 
-// Add interceptor to include token in all requests
 api.interceptors.request.use(config => {
-  const token = localStorage.getItem('authToken');
+  const token = localStorage.getItem('token');
   if (token) {
     config.headers = config.headers || {};
     config.headers.Authorization = `Bearer ${token}`;
+    console.log('Attaching token to request:', token); // Log token usage
   }
   return config;
 });

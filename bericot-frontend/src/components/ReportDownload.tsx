@@ -4,7 +4,7 @@ import { downloadReport } from '../services/api';
 const ReportDownload: React.FC = () => {
   const [month, setMonth] = React.useState(1);
   const [year, setYear] = React.useState(2025);
-  const token = localStorage.getItem('token') || '';
+  const token = localStorage.getItem('authToken') || ''; 
 
   const handleDownload = async () => {
     try {

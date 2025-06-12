@@ -1,3 +1,4 @@
+//stockController.ts
 import { Request, Response, NextFunction } from 'express';
 import { inject } from 'inversify';
 import { controller, httpPost, httpGet, request, response, next } from 'inversify-express-utils';

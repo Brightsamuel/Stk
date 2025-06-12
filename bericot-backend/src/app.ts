@@ -1,43 +1,46 @@
+import 'reflect-metadata';
+import dotenv from 'dotenv';
+dotenv.config();
+
+if (!process.env.JWT_SECRET) {
+  console.error('FATAL ERROR: JWT_SECRET environment variable is not defined.');
+  process.exit(1); // Exit the application if the secret is missing
+}
 import express from 'express';
 import cors from 'cors';
 import { InversifyExpressServer } from 'inversify-express-utils';
 import { container } from './container';
-import authRoutes from 'presentation/routes/authRoutes';
-import stockRoutes from 'presentation/routes/stockRoutes';
-import { connectToDatabase } from 'infrastructure/database/connection';
+import { connectToDatabase } from './infrastructure/database/connection';
 
-// Create a base express app to apply middleware
-const baseApp = express();
-baseApp.use(cors({
-  origin: 'http://localhost:3000',
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
-baseApp.use(express.json());
+import './presentation/controllers/authController';
+import './presentation/controllers/stockController'; 
 
-// Pass the base app to InversifyExpressServer
-const server = new InversifyExpressServer(container, null, null, baseApp);
-const app = server.build();
-
-const port = 3001; // or 3000 if you want, but make sure it's free
-
-// Error handling middleware
-app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Error:', error);
-  res.status(500).json({ error: 'Internal server error' });
-});
-
-const startServer = async () => {
+async function bootstrap() {
   try {
     await connectToDatabase();
-    app.listen(port, () => {
-      console.log(`Server running on port ${port}`);
+    console.log('MONGODB_URI:', process.env.MONGODB_URI);
+    console.log('JWT_SECRET:', process.env.JWT_SECRET ? 'Set' : 'Missing');
+
+    const server = new InversifyExpressServer(container);
+    server.setConfig((app) => {
+      app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
+      app.use(express.json());
+      app.use(express.urlencoded({ extended: true }));
+      app.use((req, res, next) => {
+        console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+        console.log('Body:', req.body);
+        next();
+      });
+    });
+
+    const app = server.build();
+    app.listen(3001, () => {
+      console.log('Server running on http://localhost:3001');
     });
   } catch (error) {
     console.error('Failed to start server:', error);
     process.exit(1);
   }
-};
+}
 
-startServer();
+bootstrap();

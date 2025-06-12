@@ -1,3 +1,4 @@
+//authRoutes.ts
 import { Router } from 'express';
 import { container } from '../../container';
 import { AuthController } from '../controllers/authController';

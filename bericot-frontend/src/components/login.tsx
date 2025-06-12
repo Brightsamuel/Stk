@@ -50,13 +50,24 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    console.log('Sending login request to http://localhost:3001/api/auth/login', credentials);
 
     try {
-      const response = await axios.post<{ token: string }>('http://localhost:3001/api/auth/login', credentials);
+      const response = await axios.post<{ token: string }>(
+        'http://localhost:3001/api/auth/login',
+        credentials,
+        { headers: { 'Content-Type': 'application/json' } }
+      );
+      console.log('Response status:', response.status);
+      console.log('Response data:', response.data);
       const { token } = response.data;
       localStorage.setItem('authToken', token);
+      console.log('Token stored:', localStorage.getItem('authToken'));
       onLogin(token);
     } catch (err: any) {
+      console.error('Login error:', err);
+      console.log('Error response:', err.response?.data);
+      console.log('Error status:', err.response?.status);
       setError(err.response?.data?.error || 'Login failed');
     } finally {
       setLoading(false);

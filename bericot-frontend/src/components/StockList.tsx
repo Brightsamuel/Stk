@@ -3,7 +3,7 @@ import { getAllStock, Stock } from '../services/api';
 
 const StockList: React.FC = () => {
   const [stocks, setStocks] = useState<Stock[]>([]);
-  const token = localStorage.getItem('token') || '';
+  const token = localStorage.getItem('authToken') || '';
 
   useEffect(() => {
     const fetchStocks = async () => {
